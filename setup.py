@@ -1,9 +1,7 @@
-# Always prefer setuptools over distutils
+# example taken from https://python-packaging.readthedocs.io/en/latest/about.html
 
-from setuptools import setup, find_packages
-# To use a consistent encoding
-from codecs import open
-from os import path
+# Always prefer setuptools over distutils
+from setuptools import setup
 
 setup(
     name='broadcast_cli',

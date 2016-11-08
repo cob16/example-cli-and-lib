@@ -12,3 +12,6 @@ be sent to a number of social medea, email, blogs ect at the same time by the se
 ### Running tests
 - `pip install .[test]`
 - `nosetests`
+
+## With help from 
+- https://github.com/kennethreitz/clint/tree/master/examples
