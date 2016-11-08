@@ -1,7 +1,4 @@
 class Action:
-    URL = None
-    auth_token = None
-
     def __init__(self, url, auth_token=None):
         self.url = url
         self.auth_token = auth_token
