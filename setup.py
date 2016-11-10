@@ -45,6 +45,7 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
         'clint',
+        'begins',
     ],
 
     # List additional groups of dependencies here (e.g. development
@@ -74,7 +75,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'broadcast=broadcast_cli.commands:test',
+            'broadcast=broadcast_cli.commands:broadcast.start',
         ],
     },
 )
