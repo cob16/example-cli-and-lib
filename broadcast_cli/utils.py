@@ -1,7 +1,6 @@
 # helper functions
 def isMessageBody(line: str) -> bool:
     """
-    Returns True if line is unempty or is a comment (contains #)
+    Returns True if line has more than just whitepsace and unempty or is a comment (contains #)
     """
-    line = line.lstrip()
-    return line or (not line.startswith('#'))
+    return not ( line.isspace() and line.lstrip().startswith('#') )
