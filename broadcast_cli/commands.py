@@ -5,10 +5,10 @@ from subprocess import call
 from urllib.parse import urlparse
 
 import begin
+from broadcast_cli import actions
 from clint import piped_in
 from clint.textui import prompt, puts, colored
 
-from .actions import Action
 from .utils import isMessageBody
 
 _in_data = ''
@@ -36,27 +36,31 @@ def send(message: 'set the message body' = None):
             message = filter(isMessageBody, message)  # extract body
 
     print(colored.green(''.join(message)))
-    puts(colored.red("TODO")) # TODO
+    puts(colored.red("TODO"))  # TODO
 
 
 @begin.subcommand
 def list(all: 'Gets all broadcasts no matter what users made them' = False):
     """Gets a list of all broadcasts made by the current user"""
-    puts(colored.red("TODO"))  # TODO
+    puts(colored.red(begin.context.last_return))
+    # puts(colored.yellow(actions.get_all()))  # TODO
+
 
 @begin.subcommand
 def show(id: 'broadcast id'):
     """Show all detail of a broadcast"""
-    puts(colored.red("TODO")) # TODO
+    # actions.get(id)
 
 
 # main cmd method
 @begin.start(auto_convert=True)
 def broadcast():
-    """Sends and receives broadcasts (multi social network posts) from a server.
+    """
+    Sends and receives broadcasts (multi social network posts) from a server.
 
     Use [subcommand] -h to get information of a command
     """
+    return "test"  # returned to sub command
 
 
 def use_pipe():
@@ -67,10 +71,6 @@ def use_pipe():
         puts(colored.red('Data was piped in this will be used as the message body'))
     else:
         print(colored.green('started'))
-
-
-def setup():
-    a = Action(url, 'foobar')
 
 
 def interactive_mode():
