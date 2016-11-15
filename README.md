@@ -5,10 +5,6 @@ It is cli python application that allows human communication with the a rails AP
 The idea being that a user can send a 'broadcast' (i.e a text message) that will 
 be sent to a number of social medea, email, blogs ect at the same time by the server.
 
-**Note: The 'begins' library contains a bug where it crashes if no sub-commands are used.
- currently waiting on 
- https://github.com/aliles/begins/pull/60 
- to be merged**
  
 ### To install
 - `pip install .`

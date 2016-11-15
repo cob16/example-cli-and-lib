@@ -4,7 +4,9 @@ from furl import furl
 
 from .broadcast import Broadcast
 
-BROADCASTS = 'api/broadcasts'
+PREFIX = 'api'
+BROADCASTS_URL = '{0}/broadcasts'.format(PREFIX)
+USERS_URL = '{0}/users'.format(PREFIX)
 
 
 class Actions:
@@ -12,14 +14,14 @@ class Actions:
     Performs actions of supplied commands
     """
 
-    def __init__(self, url='http://0.0.0.0:3000/api/broadcasts', auth_token=None):
+    def __init__(self, url='http://0.0.0.0:3000', auth_token=None, return_raw=False):
         self.base_url = furl(url).remove(  # normalise
             args=True,
             path=True,
             username=True,
             password=True
         )
-
+        self.return_raw = return_raw
         self.auth_token = auth_token
 
     def get(self, broadcasts_id: int = None):
@@ -29,15 +31,16 @@ class Actions:
         :return: Broadcast
         """
         if broadcasts_id is None:
-            return self._get(self._geturl().set(path=BROADCASTS))
+            data =  self._get(self._geturl().set(path=BROADCASTS_URL))
+        else:
+            url_ob = self._geturl().set(path=BROADCASTS_URL)
+            url_ob.path.segments.append(broadcasts_id)
+            data = self._get(url_ob)
 
-        url_ob = self._geturl().set(path=BROADCASTS)
-        url_ob.path.segments.append(broadcasts_id)
-        data = self._get(url_ob).json()
+        if self.return_raw:
+            return data.text
 
-        return Broadcast.from_dict(data)
-
-        # return list(map(lambda d: Broadcast().from_json(d), data))
+        return data.json()
 
     @staticmethod
     def _get(url_ob):
@@ -59,4 +62,3 @@ class Actions:
 
     def _geturl(self):
         return self.base_url.copy()
-

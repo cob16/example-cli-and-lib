@@ -5,7 +5,7 @@ from subprocess import call
 from urllib.parse import urlparse
 
 import begin
-from broadcast_cli import broadcast_printer as print_field
+from .broadcast_printer import broadcast_printer
 from clint import piped_in
 from clint.textui import prompt, puts, colored
 
@@ -48,25 +48,31 @@ def list(all: 'Gets all broadcasts no matter what users made them' = False):
 
 
 @begin.subcommand
-def show(id: 'broadcast id'):
+def show(id: 'broadcast id'=None):
     """Show all detail of a broadcast"""
+    parent = begin.context.last_return
+    broadcasts = parent['action'].get(id)
 
-    b = Actions().get(id)
-
-    print_field.content(b)
-    print_field.feed(b)
-    print_field.created_at(b)
+    if parent['raw']:
+        print(broadcasts)
+    elif id:
+        broadcast_printer(broadcasts)
+    else:
+        for b in broadcasts:
+            broadcast_printer(b)
+            # list(map(lambda d: Broadcast().from_json(d), data)
 
 
 # main cmd method
 @begin.start(auto_convert=True)
-def broadcast():
+def broadcast(raw: 'Reurn only raw Json' = False):
     """
     Sends and receives broadcasts (multi social network posts) from a server.
 
     Use [subcommand] -h to get information of a command
     """
-    pass
+    action = Actions(return_raw=raw)
+    return dict(action=action, raw=raw)
 
 
 # def use_pipe():
