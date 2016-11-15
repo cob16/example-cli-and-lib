@@ -8,6 +8,7 @@ PREFIX = 'api'
 BROADCASTS_URL = '{0}/broadcasts'.format(PREFIX)
 USERS_URL = '{0}/users'.format(PREFIX)
 
+FEEDS = "twitter facebook RSS atom email".split()
 
 class Actions:
     """

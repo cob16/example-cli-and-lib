@@ -1,5 +1,6 @@
 import os
 import tempfile
+from functools import reduce
 from operator import methodcaller
 from subprocess import call
 from urllib.parse import urlparse
@@ -9,24 +10,30 @@ from .broadcast_printer import broadcast_printer
 from clint import piped_in
 from clint.textui import prompt, puts, colored
 
-from .actions import Actions
+from .actions import Actions, FEEDS
 from .utils import isMessageBody
 
 _in_data = ''
 _a = None
 
 
+def generate_feeds():
+    return ': \n\n'.join(FEEDS) + ': \n'
+
+
 @begin.subcommand
 def send(message: 'set the message body' = None):
     """Sends a new broadcast"""
+
     if message is None:
         EDITOR = os.environ.get('EDITOR', 'vim')
-        editHelpText = b'#\n' \
-                       b'# Enter the body your message above then save & quit\n' \
-                       b'# (lines like this one that start with a # are removed)'
+        editHelpText = "# place an \'x\' after the feed name to indicate you wish to post there \n" \
+                       "{} \n" \
+                       "# Enter the body your message below then save & quit\n" \
+            .format(generate_feeds()).encode()
 
         with tempfile.NamedTemporaryFile(suffix=".tmp", delete=True) as tf:
-            tf.write(b'\n' + editHelpText)
+            tf.write(b'#\n' + editHelpText)
             tf.flush()
 
             call([EDITOR, tf.name])
@@ -48,7 +55,7 @@ def list(all: 'Gets all broadcasts no matter what users made them' = False):
 
 
 @begin.subcommand
-def show(id: 'broadcast id'=None):
+def show(id: 'broadcast id' = None):
     """Show all detail of a broadcast"""
     parent = begin.context.last_return
     broadcasts = parent['action'].get(id)
@@ -71,7 +78,7 @@ def broadcast(raw: 'Reurn only raw Json' = False):
 
     Use [subcommand] -h to get information of a command
     """
-    action = Actions(return_raw=raw)
+    action = Actions(return_raw=raw)  # create our instance
     return dict(action=action, raw=raw)
 
 
