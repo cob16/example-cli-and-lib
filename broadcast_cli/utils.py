@@ -16,11 +16,8 @@ def build_help_text(feeds):
     """
     Takes field names and any proved params and makes the help text for the editor
     """
-    feeds = ": \n\n".join(feeds) + ': \n'
-
-    return "# place an \'x\' after the feed name to indicate you wish to post there \n" \
-           "{} \n" \
-           "# Enter the body your message below then save & quit\n" \
+    return " \n" \
+           "# Enter the body your message then save & quit\n" \
         .format(feeds).encode()
 
 
@@ -38,9 +35,13 @@ class UrlValidator(object):
         """
         Validates that the input is a valid directory.
         """
-        if not urlparse(value).scheme:
+        if not url_valid(value):
             raise ValidationError(self.message)
         return value
+
+
+def url_valid(url):
+    return urlparse(url).scheme
 
 
 def exit_and_fail(msg: str):

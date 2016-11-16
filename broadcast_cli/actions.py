@@ -1,6 +1,7 @@
 # coding=utf-8
 import requests
 from furl import furl
+from requests import HTTPError
 
 from .broadcast import Broadcast
 from .utils import exit_and_fail
@@ -53,6 +54,8 @@ class Actions:
     def _get(url_ob):
         r = requests.get(url_ob.url, auth=('admin', 'admin'))
         r.raise_for_status()
+        if r.status_code == 204:
+            exit_and_fail('No content returned from the server')
         return r
 
     def post(self, broadcast: Broadcast) -> bool:
