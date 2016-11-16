@@ -1,16 +1,14 @@
-from clint.textui import colored, indent, puts
+from clint.textui import colored, indent, puts, columns
 from datetime import datetime
 
 
 def broadcast_printer(b):
-    puts(user_id(b))
-    puts(created_at(b))
-    puts(feed(b))
-
+    puts(columns([user_id(b), 10], [created_at(b), 25], [feed(b), None]))
     puts(colored.yellow('Content: ▼'))
-    with indent(4):
-        puts(b['content'])
+    # with indent(10):
+    puts(b['content'])
     puts()
+
 
 
 def user_id(broadcast):
@@ -18,7 +16,8 @@ def user_id(broadcast):
 
 
 def feed(broadcast):
-    return colored.magenta("Feeds: {0}").format(' - '.join(broadcast['feeds']))
+    feeds = sorted(broadcast['feeds'], key=str.lower) #case insensitive sort
+    return colored.magenta("Feeds: {0}").format(' - '.join(feeds))
 
 
 def created_at(b):

@@ -3,6 +3,7 @@ import requests
 from furl import furl
 
 from .broadcast import Broadcast
+from .utils import exit_and_fail
 
 PREFIX = 'api'
 BROADCASTS_URL = '{0}/broadcasts'.format(PREFIX)
@@ -10,12 +11,17 @@ USERS_URL = '{0}/users'.format(PREFIX)
 
 FEEDS = "twitter facebook RSS atom email".split()
 
+
 class Actions:
     """
     Performs actions of supplied commands
     """
 
-    def __init__(self, url='http://0.0.0.0:3000', auth_token=None, return_raw=False):
+    def __init__(self, url, auth_token=None, return_raw=False):
+        if furl(url).scheme is '':
+            print(url)
+            exit_and_fail("URL not valid! Please make sure you included 'https://'")
+
         self.base_url = furl(url).remove(  # normalise
             args=True,
             path=True,
@@ -32,7 +38,7 @@ class Actions:
         :return: Broadcast
         """
         if broadcasts_id is None:
-            data =  self._get(self._geturl().set(path=BROADCASTS_URL))
+            data = self._get(self._geturl().set(path=BROADCASTS_URL))
         else:
             url_ob = self._geturl().set(path=BROADCASTS_URL)
             url_ob.path.segments.append(broadcasts_id)
