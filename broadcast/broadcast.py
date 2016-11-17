@@ -30,15 +30,9 @@ class Broadcast(Jsonionise):
         self.created_at = created_at
 
     @property
-    def feed(self):
+    def feeds(self):
         return self.feed_list
 
-    @feed.setter
-    def feed(self, feed):
+    @feeds.setter
+    def feeds(self, feed):
         self.feed_list = feed
-
-    # def is_invalid(self): # todo
-    #     """
-    #     checks to make sure the minimum fields are
-    #     """
-    #     return self.content is None or self.feed is None:

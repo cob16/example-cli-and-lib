@@ -49,16 +49,22 @@ class RestActions:
         :return: Broadcast
         """
         if broadcasts_id is None:
-            data = self._get(self.url.set(path=BROADCASTS_URL))
+            broadcast = self._get(self.url.set(path=BROADCASTS_URL))
         else:
             url_ob = self.url.set(path=BROADCASTS_URL)
             url_ob.path.segments.append(broadcasts_id)
-            data = self._get(url_ob)
+            broadcast = self._get(url_ob)
 
         if self.return_raw:
-            return data.text
+            return broadcast.text
 
-        return data.json()
+        broadcast = broadcast.json()
+
+        if broadcasts_id:
+            return Broadcast.from_dict(broadcast)
+
+        return list(
+            map((lambda b: Broadcast.from_dict(b)), broadcast))  # convert each broadcast to a Broadcast object to a
 
     def _get(self, url_ob):
         r = requests.get(url_ob.url, headers={'Authorization': self.auth_token})
@@ -75,12 +81,12 @@ class RestActions:
         """
         Post Broadcast to server
         """
-        data = self._post(broadcast.to_json, self.url.set(path=BROADCASTS_URL))
+        data = self._post(broadcast.__dict__, self.url.set(path=BROADCASTS_URL))
 
         if self.return_raw:
             return data.text
 
-        return data.json()
+        return Broadcast.from_dict(data.json())
 
     def _post(self, payload, url, headers=None):
         if headers is None:
@@ -89,7 +95,7 @@ class RestActions:
         data = requests.post(url, data=payload, headers=headers)
         data.raise_for_status()
         RestActions.raise_for_nocontent(data)
-        return data.json()
+        return data
 
     def Authenticate(self, login, password):
         """
@@ -98,6 +104,5 @@ class RestActions:
         :returns: auth_token
         """
         logininfo = dict(login=login, password=password)
-        # print(logininfo)
-        self.auth_token = self._post(logininfo, self.url.set(path=SESSION_URL), headers=False)['auth_token']
+        self.auth_token = self._post(logininfo, self.url.set(path=SESSION_URL), headers=False).json()['auth_token']
         return self.auth_token

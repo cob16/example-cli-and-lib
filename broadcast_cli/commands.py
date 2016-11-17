@@ -36,6 +36,8 @@ def send(message: 'set the message body' = None, *feeds: 'Bare list of feeds {0}
         Broadcast(list(feeds), message)
     )
 
+    puts(colored.green('Successfully sent broadcast!'))
+
     if parent['raw']:
         print(broadcast)
     else:
@@ -66,8 +68,8 @@ def interactive_editor():
         message = tf.readlines()  # and get a full array of lines
 
         message = map(methodcaller('decode', 'utf-8'), message)  # convert bites 2 strings
-        message = filter(isMessageBody, message)  # remove blank lines and comments
-    return message
+        message = list(filter(isMessageBody, message))  # remove blank lines and comments
+    return ' '.join(message)
 
 
 @begin.subcommand
