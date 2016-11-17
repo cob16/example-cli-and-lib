@@ -5,55 +5,59 @@ from operator import methodcaller
 from subprocess import call
 
 import begin
-from clint import resources, Args
+from broadcast.broadcast import Broadcast
+from broadcast.rest_actions import FEEDS as KNOWN_FEEDS
+from broadcast.rest_actions import RestActions
+from clint import resources
 from clint.textui import prompt, puts, colored
 
-from .actions import Actions, FEEDS
 from .broadcast_printer import broadcast_printer
 from .utils import isMessageBody, build_help_text, UrlValidator, exit_and_fail, url_valid
 
 _in_data = ''
-URL_FILE_NAME = 'url'
+URL_FILENAME = 'url'
+AUTHTOKEN_FILENAME = 'token'
+
 
 @begin.subcommand
-def send(message: 'set the message body' = None, *feeds: 'Bare list of feeds {0}'.format(FEEDS)):
+def send(message: 'set the message body' = None, *feeds: 'Bare list of feeds {0}'.format(KNOWN_FEEDS)):
     """Sends a new broadcast to the server"""
     parent = begin.context.last_return
-
-    for f in FEEDS:
-        if any(f in s for s in feeds): #if feed name matched user input provided
-            puts(f + ' was provided')
-        else:
-            puts(f + ' was not')
-
-    sys.exit(0)
+    validate_feeds(feeds)
 
     # prompt the user for input if we are allowed/reqired
-    if parent['interactive']:
-        if message is None:
+    if message is None:
+        if parent['interactive']:
             message = interactive_editor()
-        if feeds is '':
-            feeds = interactive_feed_select()
+        else:
+            exit_and_fail('You must provide a message')
 
-    # missing param handle
-    if not message:
-        exit_and_fail('No message was specified!')
-    elif feeds is '':
-        exit_and_fail('No feed was specified!')
+    broadcast = parent['action'].post(
+        Broadcast(list(feeds), message)
+    )
+
+    if parent['raw']:
+        print(broadcast)
     else:
-        # actualy run the cmd
-        print(colored.green(''.join(message)))
-        puts(colored.red("TODO"))  # TODO
+        broadcast_printer(broadcast)
 
 
-def interactive_feed_select():
-    return 'email'
+def validate_feeds(feeds):
+    feeds = set(feeds)
+    if not feeds:
+        exit_and_fail("You must specify feed names ('broadcast send -h' for more info)")
+    elif not set(KNOWN_FEEDS) > feeds:  # are there incorrect feed names supplyed
+        exit_and_fail(
+            "Unknown feed names: {0}".format(
+                feeds.difference(KNOWN_FEEDS)
+            )
+        )
 
 
 def interactive_editor():
     EDITOR = os.environ.get('EDITOR', 'vim')
     with tempfile.NamedTemporaryFile(suffix=".tmp", delete=True) as tf:
-        tf.write(b'#\n' + build_help_text(FEEDS))
+        tf.write(b'\n' + build_help_text(KNOWN_FEEDS))
         tf.flush()
 
         call([EDITOR, tf.name])
@@ -82,47 +86,66 @@ def show(id: 'broadcast id' = None):
 
 
 @begin.subcommand()
-def configure(delete: 'Deletes any exsisting config'=False, allow_write: 'allows write while in interactive mode'=False):
+def configure(delete: 'Deletes any exsisting config' = False,
+              allow_write: 'allows write while in interactive mode' = False):
     """Set or delete a url to be remembered by the program"""
     parent = begin.context.last_return
     url = parent['url']
+    auth_token = parent['action'].auth_token
     if delete:
-        resources.user.delete(URL_FILE_NAME)
+        resources.user.delete(URL_FILENAME)
+        resources.user.delete(AUTHTOKEN_FILENAME)
         puts(colored.green("Existing config deleted..."))
         return None
-    if parent['interactive'] or allow_write is False:
+    if parent['interactive'] is False and allow_write is False:
         exit_and_fail("Writing to file while in non-interactive mode explicitly requires the '--allow-write' flag")
 
-    puts('This will write a config file so that the url is remembered')
+    puts('This will write a config file so that The following is remembered:')
 
     if parent['interactive']:
-        keep_prompting = confirm_write(url)
-        while keep_prompting:
-            url = url_prompt()
-            puts()
-            keep_prompting = confirm_write(url)
-
-        if keep_prompting is None:
+        if confirm_write(url, auth_token) is False:
             sys.exit(0)
 
     puts(colored.yellow("Writing to '{}'".format(resources.user.path)))
-    resources.user.write(URL_FILE_NAME, url)
+    resources.user.write(URL_FILENAME, url)
+    resources.user.write(AUTHTOKEN_FILENAME, auth_token)
     puts(colored.green("Success!"))
 
 
-def confirm_write(url):
-    prompt_options = [{'selector': 'y', 'prompt': 'Yes, write this url to file', 'return': False},
-                      {'selector': 'n', 'prompt': 'No, and exit program', 'return': None},
-                      {'selector': 'r', 'prompt': 'Re enter URL', 'return': True}]
+def confirm_write(url, token):
+    PROMPT_OPTIONS = [
+        {'selector': 'y', 'prompt': 'Yes, write this url to file', 'return': True},
+        {'selector': 'n', 'prompt': 'No, and exit program', 'return': False}
+    ]
 
-    return prompt.options("'{}' will be written to config.".format(url), prompt_options)
+    return prompt.options("\nURL   : '{}'\nToken : '{}'".format(url, token),
+                          PROMPT_OPTIONS)
 
 
-# main cmd method
+def set_authtoken(interactive, action):
+    config = get_config(AUTHTOKEN_FILENAME)
+    if config:
+        action.auth_token = config
+        return config
+    if interactive:
+        puts(colored.yellow("Querying: {} for a API token".format(action.url)))
+        config = action.Authenticate(
+            prompt.query(
+                'Please enter you username:'),
+            prompt.query(
+                'Please enter you password:')
+        )
+        puts(colored.green('Success!'))
+        return config
+
+    exit_and_fail('You must specify a auth token')
+
+
 @begin.start(auto_convert=True, short_args=True)
 def broadcast(raw: 'Reurn only raw Json' = False,
-              interactive: 'force interactive on/off' = True,
-              url: 'specify url' = None
+              interactive: 'Force interactive on/off' = True,
+              url: 'Specify url' = None,
+              auth_token: 'Explicitly specify auth token instead of from config or interactively' = None
               ):
     """
     Sends and receives broadcasts (multi social network posts) from a server.
@@ -137,14 +160,18 @@ def broadcast(raw: 'Reurn only raw Json' = False,
     elif not url_valid(url):
         exit_and_fail("Invalid URL")
 
-    action = Actions(return_raw=raw, url=url)  # create our instance
+    action = RestActions(return_raw=raw, url=url)  # create our instance
+
+    # need the action instance for this one
+    if auth_token is None:
+        set_authtoken(interactive, action)
+
     return dict(action=action, raw=raw, interactive=interactive, url=url)
 
 
 def get_url(interactive):
-
-    config = resources.user.read(URL_FILE_NAME)  # try to find config file
-    if config is not None:
+    config = get_config(URL_FILENAME)
+    if config:
         if not url_valid(config):
             exit_and_fail("Url in config is not valid! use 'broadcast configure --delete' to fix this")
         return config
@@ -156,6 +183,11 @@ def get_url(interactive):
 
 def url_prompt():
     return prompt.query('Please enter an API URL:', default='http://localhost:3000', validators=[UrlValidator()])
+
+
+def get_config(filename):
+    """ try to find config file else return None """
+    return resources.user.read(filename)  # try to find config file
 
 # def use_pipe():
 #     '''this function is run from the shell'''

@@ -16,7 +16,7 @@ def user_id(broadcast):
 
 
 def feed(broadcast):
-    feeds = sorted(broadcast['feeds'], key=str.lower) #case insensitive sort
+    feeds = sorted(broadcast['feed_list'], key=str.lower) #case insensitive sort
     return colored.magenta("Feeds: {0}").format(' - '.join(feeds))
 
 
