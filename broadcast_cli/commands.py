@@ -47,11 +47,12 @@ def send(message: 'set the message body' = None, *feeds: 'Bare list of feeds {0}
 def validate_feeds(feeds):
     feeds = set(feeds)
     if not feeds:
-        exit_and_fail("You must specify feed names ('broadcast send -h' for more info)")
+        exit_and_fail("You must specify feed name/s ('broadcast send -h' for more info)")
     elif not set(KNOWN_FEEDS) > feeds:  # are there incorrect feed names supplyed
         exit_and_fail(
-            "Unknown feed names: {0}".format(
-                feeds.difference(KNOWN_FEEDS)
+            "Unknown feed name/s: {0}.\nRecognised names are: '{1}'".format(
+                feeds.difference(KNOWN_FEEDS),
+                ', '.join(KNOWN_FEEDS)
             )
         )
 

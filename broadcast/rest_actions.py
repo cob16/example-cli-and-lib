@@ -11,7 +11,7 @@ PREFIX = 'api'
 BROADCASTS_URL = '{0}/broadcasts'.format(PREFIX)
 SESSION_URL = '{0}/session'.format(PREFIX)
 
-FEEDS = "twitter facebook RSS atom email".split()
+FEEDS = "notification twitter facebook RSS atom email".split()
 
 
 def raise_for_no_content(reply):
@@ -86,15 +86,20 @@ class RestActions:
         if self.return_raw:
             return data.text
 
-        return Broadcast.from_dict(data.json())
+        data = data.json()
+        if 'errors' in data:
+            exit_and_fail(data['errors'])
+
+        return Broadcast.from_dict(data)
 
     def _post(self, payload, url, headers=None):
         if headers is None:
             headers = {'Authorization': self.auth_token}
 
-        data = requests.post(url, data=payload, headers=headers)
+        data = requests.post(url, json=payload, headers=headers)
         data.raise_for_status()
         RestActions.raise_for_nocontent(data)
+
         return data
 
     def Authenticate(self, login, password):
@@ -104,5 +109,5 @@ class RestActions:
         :returns: auth_token
         """
         logininfo = dict(login=login, password=password)
-        self.auth_token = self._post(logininfo, self.url.set(path=SESSION_URL), headers=False).json()['auth_token']
+        self.auth_token = self._post(logininfo, self.url.set(path=SESSION_URL), headers=False).json()['api_token']
         return self.auth_token
