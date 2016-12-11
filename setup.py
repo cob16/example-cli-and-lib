@@ -52,9 +52,8 @@ setup(
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:
-    # $ pip install -e .[dev,test]
+    # $ pip install -e .[test]
     extras_require={
-        # 'dev': ['check-manifest'],
         'test': ['nose'],
     },
 
